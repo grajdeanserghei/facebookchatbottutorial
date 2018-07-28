@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Messenger.Client.Objects;
 using Messenger.Client.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace FacebookDemoBot.Controllers
 {
@@ -13,10 +14,12 @@ namespace FacebookDemoBot.Controllers
         const string accessToken = "EAAJNBQJOADABAOyaRaqURp6pQceFwhznjS6Sv0QERdfOgGrmW3U4LwcXaQqdBgqpTaVM6ZApxcZAamcwVLMthP5ZBjYHokDWyqGEuOOVeTaJRoy1ZB6IZAjFcqetuQxRki5rcpiJtoKmcWw8Idqfq6BJzrV1HP6qESHZCjpZCMhHAZDZD";
 
         private readonly IMessengerMessageSender messageSender;
+        private readonly ILogger<FacebookController> logger;
 
-        public FacebookController(IMessengerMessageSender messageSender)
+        public FacebookController(IMessengerMessageSender messageSender, ILogger<FacebookController> logger)
         {
             this.messageSender = messageSender;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -25,6 +28,7 @@ namespace FacebookDemoBot.Controllers
         {
             var date = DateTime.UtcNow;
             var message = $"Hello! Today is {date.DayOfWeek}, it's {date:HH:mm} now.";
+            this.logger.LogInformation($"Ping requested. Sending message :'{message}'");
             return Ok(message);
         }
 
@@ -53,9 +57,10 @@ namespace FacebookDemoBot.Controllers
             foreach (var entry in obj.Entries)
             {
                 MessengerResponse response = await HandleEntry(entry);
+                
                 if(response.Failed)
                 {
-                    System.Console.WriteLine($"Response from server {response.RawResponse}");
+                    this.logger.LogError($"Failed to send message to facebook. Error message: '{response.RawResponse}'");
                 }
             }
         }
